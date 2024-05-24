@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper Plane Launcher</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="jquery"></script>
+  </head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    #game-area {
+      text-align: center;
+    }
+
+    #touch-area {
+      width: 300px;
+      height: 200px;
+      margin: 20px auto;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      touch-action: none; /* Prevent default touch actions */
+    }
+  </style>
+
+  <body>
+    <form action="" id="spawn">
+      Pseudo: <input type="text" id="pseudo" /><br />
+      <input type="submit" value="Spawn" />
+    </form>
+
+    <div id="game-area">
+      <h1>Swipe to launch a paper plane !!!</h1>
+      <div id="touch-area"></div>
+    </div>
+  </body>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", (event) => {
+        var user;
+
+        $(function () {
+        var socket = io();
+        $("#spawn").submit(function () {
+          const pseudo = $("#pseudo").val();
+          user = pseudo;
+          console.log({ pseudo: pseudo });
+          var msg = { pseudo: pseudo };
+          socket.emit("spawn", msg);
+          return false;
+        });
+      });
+
+      const touchArea = document.getElementById("touch-area");
+
+      const socket = io();
+
+      let startX, startY, endX, endY;
+      let startTime, endTime;
+
+      touchArea.addEventListener("touchstart", (e) => {
+        const touchStart = e.touches[0];
+        startX = touchStart.clientX;
+        startY = touchStart.clientY;
+        startTime = new Date().getTime();
+      });
+
+      touchArea.addEventListener("touchend", (e) => {
+        const touchEnd = e.changedTouches[0];
+        endX = touchEnd.clientX;
+        endY = touchEnd.clientY;
+        endTime = new Date().getTime();
+
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+
+        const directionVector = {
+          x: parseInt(deltaX),
+          y: parseInt(deltaY),
+        };
+
+        console.log("Direction Vector:", directionVector);
+        
+        // pas fait le calcule pour inverser les valeurs car jspu c'est laquelle qui faut inverser
+        const Y = 10;
+
+        const duration = endTime - startTime;
+        const Z = directionVector.y * -1;
+
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        const speed = distance / duration; 
+        const roundedSpeed = parseFloat(speed.toFixed(2));  // Arrondir aux centièmes
+
+        const vectorString = `${user}#${directionVector.x}#${Y}#${Z}#${roundedSpeed}`;
+
+        console.log("Direction Vector String:", vectorString);
+
+        socket.emit("swipe", vectorString);
+      });
+    });
+  </script>
+</html>
